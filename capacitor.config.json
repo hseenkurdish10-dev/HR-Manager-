@@ -1,0 +1,6 @@
+{
+  "appId": "com.hrmanager.personal",
+  "appName": "HR Manager",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

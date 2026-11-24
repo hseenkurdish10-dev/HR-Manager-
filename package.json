@@ -1,15 +1,14 @@
 {
   "name": "hr-manager-android",
   "version": "1.0.0",
-  "private": true,
-  "description": "Personal HR attendance manager",
+  "description": "HR Manager App",
+  "main": "index.js",
   "scripts": {
-    "android:sync": "cap sync android"
+    "build": "echo build"
   },
-  ""dependencies": {
-  "@capacitor/core": "^7.4.3",
-  "@capacitor/android": "^7.4.3"
-},
+  "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/android": "^7.4.3"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.3"

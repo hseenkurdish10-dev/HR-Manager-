@@ -6,8 +6,10 @@
   "scripts": {
     "android:sync": "cap sync android"
   },
-  "dependencies": {
-    "@capacitor/core": "^7.4.3"
+  ""dependencies": {
+  "@capacitor/core": "^7.4.3",
+  "@capacitor/android": "^7.4.3"
+},
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.3"

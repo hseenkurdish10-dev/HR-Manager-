@@ -38,7 +38,6 @@ jobs:
       - name: Sync Android
         run: npx cap sync android
 
-      
       - name: Prepare signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -77,7 +76,20 @@ jobs:
 
           p.write_text(s)
           PY
-          
+
+      - name: Verify signing key
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          keytool -certreq \
+            -keystore android/app/hr-manager.jks \
+            -storetype PKCS12 \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" \
+            -keypass "$KEYSTORE_PASSWORD" \
+            -file /tmp/hr-check.csr
+          echo "Signing key verified"
 
       - name: Build APK
         env:
@@ -93,3 +105,4 @@ jobs:
         with:
           name: HR-Manager-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          

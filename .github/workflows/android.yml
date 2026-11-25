@@ -1,4 +1,4 @@
-
+6
 name: Build Android APK
 
 on:
@@ -44,7 +44,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/hr-manager.jks
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/hr-manager.jks
           python3 - <<'PY'
           from pathlib import Path
 
@@ -82,14 +82,19 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          keytool -certreq \
+          echo "Checking keystore file..."
+          ls -l android/app/hr-manager.jks
+          sha256sum android/app/hr-manager.jks
+
+          echo "Checking keystore contents..."
+          keytool -list \
             -keystore android/app/hr-manager.jks \
             -storetype PKCS12 \
             -storepass "$KEYSTORE_PASSWORD" \
-            -alias "$KEY_ALIAS" \
-            -keypass "$KEYSTORE_PASSWORD" \
-            -file /tmp/hr-check.csr
+            -alias "$KEY_ALIAS"
+
           echo "Signing key verified"
+          
 
       - name: Build APK
         env:

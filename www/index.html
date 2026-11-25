@@ -929,8 +929,9 @@ function report(){
 let f=$('fromDate').value,
 t=$('toDate').value,
 emp=$('filterEmp').value,
-type=$('filterType').value,
-rows=db.moves.filter(m=>
+type=$('filterType').value;
+
+let rows=db.moves.filter(m=>
 m.date>=f&&m.date<=t&&
 (!emp||m.employeeId===emp)&&
 (!type||m.type===type)
@@ -940,36 +941,67 @@ let sum=['غياب','إجازة اعتيادية','إجازة مرضية','تأ�
 .map(x=>x+': '+rows.filter(m=>m.type===x).reduce((s,m)=>s+ +m.amount,0))
 .join('　 |　');
 
+let reportRows = type
+? rows
+: rows.filter(m=>m.type==='غياب');
+
+let grouped={};
+
+reportRows.forEach(m=>{
+let id=m.employeeId;
+
+if(!grouped[id]){
+let e=db.employees.find(x=>x.id===id);
+grouped[id]={
+name:e?.name||'موظف محذوف',
+dates:[],
+total:0,
+notes:[]
+};
+}
+
+grouped[id].dates.push(m.date);
+grouped[id].total+=Number(m.amount)||0;
+
+if(m.note && m.note.trim()){
+grouped[id].notes.push(m.date+' : '+m.note);
+}
+});
+
+let isAbsence=!type||type==='غياب';
+
+let titleDays=isAbsence?'أيام الغياب':'أيام الحركة';
+let titleTotal=isAbsence?'مجموع الغيابات':'مجموع الحركات';
+
 $('reportResult').innerHTML=`
 <h3>تقرير الغيابات والإجازات</h3>
 <p class="muted">الفترة: ${esc(f)} إلى ${esc(t)} · عدد الحركات: ${rows.length}</p>
 <p>${sum}</p>
+
 <div class="tablewrap">
 <table>
 <thead>
 <tr>
-<th>الموظف</th>
-<th>الحركة</th>
-<th>التاريخ</th>
-<th>المدة</th>
-<th>ملاحظات</th>
+<th>اسم الموظف</th>
+<th>${titleDays}</th>
+<th>${titleTotal}</th>
+<th>الملاحظات / الأسباب</th>
 </tr>
 </thead>
 <tbody>
-${rows.map(m=>{
-let e=db.employees.find(x=>x.id===m.employeeId);
-return `<tr>
-<td>${esc(e?.name||'محذوف')}</td>
-<td>${esc(m.type)}</td>
-<td>${esc(m.date)}</td>
-<td>${esc(m.amount)}</td>
-<td>${esc(m.note)}</td>
-</tr>`;
-}).join('')}
+${Object.values(grouped).map(e=>`
+<tr>
+<td><b>${esc(e.name)}</b></td>
+<td>${e.dates.map(d=>esc(d)).join('<br>')}</td>
+<td><b>${esc(e.total)}</b></td>
+<td>${e.notes.length?e.notes.map(n=>esc(n)).join('<br>'):'-'}</td>
+</tr>
+`).join('')||'<tr><td colspan="4">لا توجد بيانات في الفترة المحددة.</td></tr>'}
 </tbody>
 </table>
 </div>`;
 }
+  
 
 $('showReport').onclick=report;
 

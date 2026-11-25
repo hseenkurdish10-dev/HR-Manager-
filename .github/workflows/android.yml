@@ -38,31 +38,45 @@ jobs:
       - name: Sync Android
         run: npx cap sync android
 
+      
       - name: Prepare signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          mkdir -p android/app
           echo "$KEYSTORE_BASE64" | base64 --decode > android/app/hr-manager.jks
-          test -s android/app/hr-manager.jks
-          cat > android/signing.init.gradle <<'EOF'
-          gradle.projectsEvaluated {
-              allprojects {
-                  if (plugins.hasPlugin('com.android.application')) {
-                      android.signingConfigs.debug.storeFile =
-                          file("${rootProject.projectDir}/app/hr-manager.jks")
-                      android.signingConfigs.debug.storePassword =
-                          System.getenv("KEYSTORE_PASSWORD")
-                      android.signingConfigs.debug.keyAlias =
-                          System.getenv("KEY_ALIAS")
-                      android.signingConfigs.debug.keyPassword =
-                          System.getenv("KEYSTORE_PASSWORD")
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle")
+          s = p.read_text()
+
+          signing = """
+              signingConfigs {
+                  debug {
+                      storeFile file("hr-manager.jks")
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEYSTORE_PASSWORD")
                   }
               }
-          }
-          EOF
+          """
+
+          s = s.replace("    buildTypes {", signing + "\n    buildTypes {", 1)
+
+          s = s.replace(
+              "    buildTypes {",
+              """    buildTypes {
+                  debug {
+                      signingConfig signingConfigs.debug
+                  }""",
+              1
+          )
+
+          p.write_text(s)
+          PY
+          
 
       - name: Build APK
         env:
@@ -71,7 +85,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug -I signing.init.gradle
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
